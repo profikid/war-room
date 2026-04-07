@@ -5,7 +5,7 @@ const basicAuth = require('express-basic-auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = process.env.DATA_DIR || '/data/.openclaw/workspace/snuuu-telegram-entities/entities';
+const DATA_DIR = '/data/.openclaw/workspace/snuuu-telegram-entities/entities';
 
 // Basic auth
 app.use(basicAuth({
