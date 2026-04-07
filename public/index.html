@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦭 War Room | Telegram Entity Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --bg-card: #151520;
+            --accent-primary: #00d4aa;
+            --accent-secondary: #00a884;
+            --accent-glow: rgba(0, 212, 170, 0.3);
+            --text-primary: #e8e8f0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #606070;
+            --border-color: #252535;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --info: #3498db;
+            --success: #2ecc71;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1.25rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid var(--accent-primary);
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr 350px;
+            }
+        }
+
+        /* Controls */
+        .controls {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        /* Channel Tabs */
+        .channel-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .channel-tab {
+            padding: 0.6rem 1.2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .channel-tab:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        .channel-tab.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: transparent;
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        .channel-count {
+            background: rgba(0,0,0,0.2);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Entity List */
+        .entity-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .entity-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .entity-item:last-child {
+            border-bottom: none;
+        }
+
+        .entity-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .entity-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .entity-type {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .type-GPE { background: rgba(52, 152, 219, 0.2); color: #3498db; }
+        .type-ORG { background: rgba(155, 89, 182, 0.2); color: #9b59b6; }
+        .type-PERSON { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+        .type-WEAPON { background: rgba(230, 126, 34, 0.2); color: #e67e22; }
+        .type-EQUIPMENT { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
+        .type-FACILITY { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+        .type-EVENT { background: rgba(26, 188, 156, 0.2); color: #1abc9c; }
+        .type-default { background: rgba(149, 165, 166, 0.2); color: #95a5a6; }
+
+        .entity-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .entity-context {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-top: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .entity-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .entity-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Activity Feed */
+        .activity-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* Chart */
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            background: linear-gradient(to top, var(--accent-secondary), var(--accent-primary));
+            border-radius: 3px 3px 0 0;
+            transition: height 0.5s ease-out;
+            min-width: 8px;
+        }
+
+        .chart-bar:hover {
+            filter: brightness(1.2);
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-card-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .stat-card-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Type Distribution */
+        .type-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .type-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        .type-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .type-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+            border-radius: 4px;
+            transition: width 0.5s ease-out;
+        }
+
+        .type-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-stats {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .loading::after {
+            content: "";
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🦭</span>
+                <div>
+                    <div class="logo-text">WAR ROOM</div>
+                    <div class="logo-subtitle">Telegram Entity Monitor</div>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Total Entities</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="hour-count">0</div>
+                    <div class="stat-label">Last Hour</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="day-count">0</div>
+                    <div class="stat-label">24 Hours</div>
+                </div>
+            </div>
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                <span>LIVE</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search entities...">
+            </div>
+            <div class="filter-group" id="type-filters">
+                <button class="filter-btn active" data-type="all">All Types</button>
+            </div>
+        </div>
+
+        <!-- Channel Tabs -->
+        <div class="channel-tabs" id="channel-tabs">
+            <button class="channel-tab active" data-channel="all">
+                <span>📡</span> All Channels
+            </button>
+        </div>
+
+        <div class="grid">
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Entity List -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>📊</span> Extracted Entities
+                        </div>
+                        <span id="entity-count">0 entities</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="entity-list" id="entity-list">
+                            <div class="loading">Loading entities...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Activity Feed -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>⚡</span> Recent Activity
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-list" id="activity-list">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Growth Chart -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>📈</span> Extraction Rate (24h)
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" id="chart-container">
+                            <!-- Bars rendered by JS -->
+                        </div>
+                        <div class="chart-labels">
+                            <span>24h ago</span>
+                            <span>Now</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Type Distribution -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>🎯</span> Type Distribution
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="type-list" id="type-list">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentChannel = 'all';
+        let currentType = 'all';
+        let searchQuery = '';
+        let lastEntityCount = 0;
+        let channels = [];
+        let types = [];
+
+        // Type icons
+        const typeIcons = {
+            'GPE': '🌍',
+            'ORG': '🏢',
+            'PERSON': '👤',
+            'WEAPON': '🔫',
+            'EQUIPMENT': '⚙️',
+            'FACILITY': '🏭',
+            'EVENT': '📅',
+            'default': '📌'
+        };
+
+        // Format timestamp
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = (now - date) / 1000;
+            
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Get type class
+        function getTypeClass(type) {
+            return `type-${type}` in document.styleSheets[0].cssRules ? `type-${type}` : 'type-default';
+        }
+
+        // Render entity list
+        function renderEntities(entities) {
+            const container = document.getElementById('entity-list');
+            document.getElementById('entity-count').textContent = `${entities.length} entities`;
+            
+            if (entities.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🦭</div>
+                        <p>No entities found</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = entities.map(entity => `
+                <div class="entity-item">
+                    <div class="entity-header">
+                        <span class="entity-type ${getTypeClass(entity.type)}">${entity.type}</span>
+                        <span class="entity-text">${entity.text}</span>
+                    </div>
+                    <div class="entity-context">${entity.context || 'No context available'}</div>
+                    <div class="entity-meta">
+                        <span>📡 ${entity.channel}</span>
+                        <span>🕐 ${formatTime(entity.timestamp)}</span>
+                        <span>🆔 ${entity.message_id}</span>
+                        <span>📊 ${Math.round((entity.confidence || 0) * 100)}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render activity feed
+        function renderActivity(entities) {
+            const container = document.getElementById('activity-list');
+            
+            if (entities.length === 0) {
+                container.innerHTML = '<div class="empty-state">No recent activity</div>';
+                return;
+            }
+            
+            container.innerHTML = entities.slice(0, 10).map(entity => `
+                <div class="activity-item">
+                    <div class="activity-icon ${getTypeClass(entity.type)}">
+                        ${typeIcons[entity.type] || typeIcons.default}
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-text">${entity.text}</div>
+                        <div class="activity-meta">${entity.type} • ${entity.channel} • ${formatTime(entity.timestamp)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render chart
+        function renderChart(hourlyData) {
+            const container = document.getElementById('chart-container');
+            const max = Math.max(...hourlyData.map(d => d.count), 1);
+            const barWidth = 100 / hourlyData.length;
+            
+            container.innerHTML = hourlyData.map((d, i) => `
+                <div class="chart-bar" 
+                     style="left: ${i * barWidth}%; width: calc(${barWidth}% - 2px); height: ${(d.count / max) * 100}%"
+                     title="${d.hour}:00 - ${d.count} entities">
+                </div>
+            `).join('');
+        }
+
+        // Render type distribution
+        function renderTypeDistribution(stats) {
+            const container = document.getElementById('type-list');
+            const max = Math.max(...Object.values(stats.byType || {}), 1);
+            
+            const sortedTypes = Object.entries(stats.byType || {})
+                .sort((a, b) => b[1] - a[1]);
+            
+            container.innerHTML = sortedTypes.map(([type, count]) => `
+                <div class="type-item">
+                    <span class="entity-type ${getTypeClass(type)}">${type}</span>
+                    <div class="type-bar">
+                        <div class="type-bar-fill" style="width: ${(count / max) * 100}%"></div>
+                    </div>
+                    <span class="type-count">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        // Render type filters
+        function renderTypeFilters(types) {
+            const container = document.getElementById('type-filters');
+            const existing = container.querySelectorAll('.filter-btn:not([data-type="all"])');
+            existing.forEach(e => e.remove());
+            
+            types.forEach(type => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.dataset.type = type;
+                btn.textContent = type;
+                btn.addEventListener('click', () => setTypeFilter(type));
+                container.appendChild(btn);
+            });
+        }
+
+        // Render channel tabs
+        function renderChannelTabs(channels, stats) {
+            const container = document.getElementById('channel-tabs');
+            const existing = container.querySelectorAll('.channel-tab:not([data-channel="all"])');
+            existing.forEach(e => e.remove());
+            
+            channels.forEach(channel => {
+                const btn = document.createElement('button');
+                btn.className = 'channel-tab';
+                btn.dataset.channel = channel;
+                btn.innerHTML = `
+                    <span>📡</span> ${channel}
+                    <span class="channel-count">${stats.byChannel?.[channel] || 0}</span>
+                `;
+                btn.addEventListener('click', () => setChannelFilter(channel));
+                container.appendChild(btn);
+            });
+        }
+
+        // Update header stats
+        function updateHeaderStats(stats) {
+            document.getElementById('total-count').textContent = stats.total.toLocaleString();
+            document.getElementById('hour-count').textContent = stats.lastHour.toLocaleString();
+            document.getElementById('day-count').textContent = stats.last24Hours.toLocaleString();
+        }
+
+        // Set channel filter
+        function setChannelFilter(channel) {
+            currentChannel = channel;
+            document.querySelectorAll('.channel-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.channel === channel);
+            });
+            fetchData();
+        }
+
+        // Set type filter
+        function setTypeFilter(type) {
+            currentType = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+            fetchData();
+        }
+
+        // Fetch data
+        async function fetchData() {
+            try {
+                const params = new URLSearchParams();
+                if (currentChannel !== 'all') params.append('channel', currentChannel);
+                if (currentType !== 'all') params.append('type', currentType);
+                if (searchQuery) params.append('search', searchQuery);
+                
+                const response = await fetch(`/api/entities?${params}`);
+                const data = await response.json();
+                
+                renderEntities(data.entities);
+                renderActivity(data.entities);
+                renderChart(data.hourly);
+                renderTypeDistribution(data.stats);
+                updateHeaderStats(data.stats);
+                
+                // Update filters if changed
+                if (JSON.stringify(data.channels) !== JSON.stringify(channels)) {
+                    channels = data.channels;
+                    renderChannelTabs(channels, data.stats);
+                }
+                if (JSON.stringify(data.types) !== JSON.stringify(types)) {
+                    types = data.types;
+                    renderTypeFilters(types);
+                }
+                
+                // Update channel counts
+                document.querySelectorAll('.channel-tab').forEach(btn => {
+                    const ch = btn.dataset.channel;
+                    if (ch !== 'all') {
+                        const count = data.stats.byChannel?.[ch] || 0;
+                        const countEl = btn.querySelector('.channel-count');
+                        if (countEl) countEl.textContent = count;
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            fetchData();
+        });
+
+        document.querySelector('[data-channel="all"]').addEventListener('click', () => setChannelFilter('all'));
+        document.querySelector('[data-type="all"]').addEventListener('click', () => setTypeFilter('all'));
+
+        // Initial load and polling
+        fetchData();
+        setInterval(fetchData, 10000); // Poll every 10 seconds
+    </script>
+</body>
+</html>
